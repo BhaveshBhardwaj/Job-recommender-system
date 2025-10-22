@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Recommender</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #34495e;
+        }
+
+        input, button {
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 12px;
+            font-weight: bold;
+            grid-column: span 2;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 20px 0;
+        }
+
+        .loading::after {
+            content: "Loading...";
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .job-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .job-card {
+            background-color: #ffffff;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s;
+        }
+
+        .job-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .job-title {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .job-company {
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .job-location {
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .job-skills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .skill-tag {
+            background-color: #e8f4fc;
+            color: #3498db;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .source-tag {
+            background-color: #2ecc71;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .apply-button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .apply-button:hover {
+            background-color: #2980b9;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            padding: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Recommender</h1>
+        
+        <form class="search-form" id="searchForm">
+            <div class="form-group">
+                <label for="query">Job Description:</label>
+                <input type="text" id="query" name="query" required 
+                    placeholder="E.g., Python developer with experience in Django and FastAPI">
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Location:</label>
+                <input type="text" id="location" name="location" 
+                    placeholder="E.g., Bangalore, Mumbai, Remote">
+            </div>
+            
+            <div class="form-group">
+                <label for="experience">Experience (years):</label>
+                <input type="number" id="experience" name="experience" min="0" max="50" 
+                    placeholder="Years of experience">
+            </div>
+            
+            <button type="submit">Find Jobs</button>
+        </form>
+
+        <div class="loading" id="loading"></div>
+        <div class="error-message" id="error"></div>
+        <div class="job-list" id="jobList"></div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const jobList = document.getElementById('jobList');
+            
+            // Show loading, hide error
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            jobList.innerHTML = '';
+            
+            const formData = {
+                query: document.getElementById('query').value,
+                location: document.getElementById('location').value || null,
+                experience: parseInt(document.getElementById('experience').value) || null
+            };
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/recommend-jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch jobs');
+                }
+                
+                const jobs = await response.json();
+                
+                if (jobs.length === 0) {
+                    error.textContent = 'No jobs found matching your criteria';
+                    error.style.display = 'block';
+                } else {
+                    jobList.innerHTML = jobs.map(job => `
+                        <div class="job-card">
+                            <h3 class="job-title">${job.title}</h3>
+                            <div class="job-company">${job.company}</div>
+                            <div class="job-location">📍 ${job.location}</div>
+                            <p>${job.description}</p>
+                            <div class="job-skills">
+                                ${job.skills_required.map(skill => 
+                                    `<span class="skill-tag">${skill}</span>`
+                                ).join('')}
+                            </div>
+                            <span class="source-tag">${job.source}</span>
+                            <br>
+                            <a href="${job.apply_link}" target="_blank" class="apply-button">Apply Now</a>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                error.textContent = 'Error: ' + err.message;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
