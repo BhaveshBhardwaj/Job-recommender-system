@@ -446,6 +446,32 @@ async def fetch_pmkvy_centers(query: JobQueryStructured, client: httpx.AsyncClie
         
     return jobs_list
 
+async def fetch_ncs_jobs(query: JobQueryStructured, client: httpx.AsyncClient) -> List[JobListing]:
+    """
+    NEW PLACEHOLDER: Fetches jobs from National Career Service (NCS).
+    This is a key government portal for all types of Indian jobs.
+    Requires: NCS_API_KEY (example)
+    """
+    print("[API Client] Querying National Career Service (NCS)...")
+    api_key = os.getenv("NCS_API_KEY")
+    if not api_key:
+        print("[API Client] NCS_API_KEY not set. Skipping NCS.")
+        return []
+        
+    # The NCS API is complex. This is a placeholder showing how you'd add it.
+    # You would need to register on their portal to get real endpoints and keys.
+    print(f"[API Client] NCS query built. This is a placeholder.")
+    
+    # Placeholder result:
+    return [JobListing(
+        title=f"Jobs on National Career Service Portal",
+        company="Govt. of India (NCS)",
+        location=query.locations[0] if query.locations else "India",
+        url="https://www.ncs.gov.in/",
+        source="ncs.gov.in",
+        description_snippet="This is a placeholder for jobs from the official Govt. of India job portal. Go to the URL to search for live vacancies."
+    )]
+
 
 # --- ========================== ---
 # --- Main Orchestrator Function ---
@@ -473,6 +499,7 @@ async def scrape_all_platforms(query: JobQueryStructured) -> List[JobListing]:
             fetch_mantiks_jobs(query, client),
             fetch_mgnrega_data(query, client),
             fetch_pmkvy_centers(query, client),
+            fetch_ncs_jobs(query, client),
             
             # --- US-Specific API ---
             fetch_usajobs_auth(query, client)
