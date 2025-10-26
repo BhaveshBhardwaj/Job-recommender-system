@@ -14,7 +14,7 @@ def get_llm_chain():
     # 1. Initialize Groq LLM
     # Make sure GROQ_API_KEY is set in your .env file
     llm = ChatGroq(
-        model="openai/gpt-oss-20b",
+        model="openai/gpt-oss-120b",
         temperature=0.1
     )
 
